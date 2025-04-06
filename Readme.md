@@ -19,8 +19,7 @@ A serverless Python pipeline that collects, processes, and stores Worldcoin (WLD
 ## Installation
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/worldcoin-etl.git
-cd worldcoin-etl
+git clone https://github.com/DSU-Data-Engineering-CST/Team-2.git
 
 # Install dependencies
 pip install -r requirements.txt
@@ -29,7 +28,8 @@ pip install -r requirements.txt
 echo "DB_HOST=localhost
 DB_USER=etl_user
 DB_PASSWORD=secure_password
-DB_NAME=crypto_data" > .env
+DB_NAME=crypto_data
+auth_plugin=mysql_native_password" > .env
 ```
 
 ## Database Configuration
@@ -66,6 +66,8 @@ Successfully loaded data for 2024-03-15 12:30:00+05:30
 | `DB_USER`      | Database username     | `etl_user`        |
 | `DB_PASSWORD`  | Database password     | `secure_password` |
 | `DB_NAME`      | Target database name  | `crypto_data`     |
+| `auth_plugin`  | Database password     | `secure_password` |
+
 
 ## Error Handling & Monitoring
 - Automatic retry on API failures
