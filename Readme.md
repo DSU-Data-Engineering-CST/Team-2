@@ -31,7 +31,7 @@ A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data proce
 ```bash
 # Clone repository
 git clone https://github.com/DSU-Data-Engineering-CST/Team-2.git
-cd Team-2
+
 
 # Build and launch containers
 docker-compose up --build -d
