@@ -1,8 +1,11 @@
+Here's the updated `README.md` content with the revised **Installation** section and the added `auth_plugin` variable under **Database Configuration**:
+
+---
+
 ```markdown
 # Worldcoin Cryptocurrency ETL Pipeline
 
 A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data processing, designed to run in Docker containers. Collects, transforms, and stores cryptocurrency metrics directly into MySQL without intermediate file storage.
-
 
 ## Key Features
 
@@ -10,7 +13,7 @@ A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data proce
   Dockerized MySQL + Python ETL service with health monitoring
 - **Direct Database Storage**  
   Eliminates CSV intermediates using in-memory processing
-- **5-Minute Interval Updates**  
+- **15-Minute Interval Updates**  
   Automated scheduling with fault tolerance
 - **Data Validation**  
   Quality checks and freshness monitoring
@@ -26,13 +29,27 @@ A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data proce
 - Python 3.9+ (for local development only)
 - Internet connection for API access
 
-## Quick Start
+## Installation
 
 ```bash
 # Clone repository
-git clone https://github.com/DSU-Data-Engineering-CST/Team-2.git
 
+git clone https://github.com/DSU-Data-Engineering-CST/Team-2[World-Coin].git
 
+# Install dependencies
+pip install -r requirements.txt
+
+# Create environment configuration
+echo "DB_HOST=localhost
+DB_USER=etl_user
+DB_PASSWORD=secure_password
+DB_NAME=crypto_data
+auth_plugin=mysql_native_password" > .env
+```
+
+## Quick Start
+
+```bash
 # Build and launch containers
 docker-compose up --build -d
 
@@ -59,20 +76,21 @@ services:
 
 ## Environment Variables
 
-| Variable       | Description           | Docker Default     |
-|----------------|-----------------------|--------------------|
-| `DB_HOST`      | MySQL service name    | `mysql`            |
-| `DB_PORT`      | MySQL port            | `3306`             |
-| `DB_USER`      | Database username     | `etl_user`         |
-| `DB_PASSWORD`  | Database password     | `secure_password`  |
-| `DB_NAME`      | Target database       | `crypto_data`      |
+| Variable        | Description            | Docker Default      |
+|------------------|------------------------|----------------------|
+| `DB_HOST`        | MySQL service name     | `mysql`              |
+| `DB_PORT`        | MySQL port             | `3306`               |
+| `DB_USER`        | Database username      | `etl_user`           |
+| `DB_PASSWORD`    | Database password      | `secure_password`    |
+| `DB_NAME`        | Target database name   | `crypto_data`        |
+| `auth_plugin`    | MySQL auth plugin      | `mysql_native_password` |
 
 ## Customization
 
 ### Modify Collection Interval
 ```python
 # main.py
-time.sleep(300)  # Change 300 seconds (5 minutes) to desired interval
+time.sleep(900)  # 900 seconds = 15 minutes
 ```
 
 ### Add New Metrics
@@ -84,7 +102,7 @@ time.sleep(300)  # Change 300 seconds (5 minutes) to desired interval
 ```python
 # extract.py
 def get_ist_time():
-    return datetime.now(timezone(timedelta(hours=5, minutes=30)))  # Update offset
+    return datetime.now(timezone(timedelta(hours=5, minutes=30)))  # IST
 ```
 
 ## Monitoring & Troubleshooting
@@ -99,27 +117,14 @@ docker-compose ps
 docker exec -it worldcoin-mysql mysql -u etl_user -p crypto_data
 ```
 
-**Common Issues:**
+## Error Handling & Monitoring
 
-1. **Database Connection Failures**  
-   - Verify MySQL container is running  
-   - Check environment variables match docker-compose.yml  
+- Automatic retry on API failures
+- Logs for every pipeline execution
+- Alerts for connection issues or data validation failures
 
-2. **Missing Data**  
-   - Monitor API status: `curl https://api.binance.com/api/v3/ping`  
-   - Check ETL logs: `docker-compose logs etl`
+## Maintainers
 
-3. **Build Failures**  
-   - Clear Docker cache: `docker-compose build --no-cache`
+- Team 2 – Data Engineering @ DSU CST
+```
 
-
-``` 
-
-This README features:
-1. Docker-first documentation
-2. Visual architecture placeholder (replace with actual diagram)
-3. Command-line snippets with copy/paste functionality
-4. Troubleshooting recipes for containerized environment
-5. Clear customization pathways
-6. Responsive table formatting
-7. License and maintainer information
