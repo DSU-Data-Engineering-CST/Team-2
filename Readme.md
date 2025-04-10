@@ -1,8 +1,3 @@
-Here's the updated `README.md` content with the revised **Installation** section and the added `auth_plugin` variable under **Database Configuration**:
-
----
-
-```markdown
 # Worldcoin Cryptocurrency ETL Pipeline
 
 A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data processing, designed to run in Docker containers. Collects, transforms, and stores cryptocurrency metrics directly into MySQL without intermediate file storage.
