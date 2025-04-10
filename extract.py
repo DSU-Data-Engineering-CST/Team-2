@@ -1,30 +1,46 @@
 import requests
-from datetime import datetime, timezone, timedelta
+import pandas as pd
+from datetime import datetime, timedelta
 
-def get_ist_time():
-    #Get current IST time (UTC+5:30)
-    return datetime.now(timezone.utc).astimezone(
-        timezone(timedelta(hours=5, minutes=30))
-    )
-
-def fetch_worldcoin_data():
-    #Fetch Worldcoin data from CoinGecko API
-    url = "https://api.coingecko.com/api/v3/coins/worldcoin-wld"
+def fetch_coin_data():
+    """Fetch Worldcoin (WLD/USDT) market data from Binance API"""
     try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-        
-        return {
-            'timestamp': data['last_updated'],
-            'price': data['market_data']['current_price']['usd'],
-            'high_24h': data['market_data']['high_24h']['usd'],
-            'low_24h': data['market_data']['low_24h']['usd'],
-            'volume_24h': data['market_data']['total_volume']['usd'],
-            'market_cap': data['market_data']['market_cap']['usd'],
-            'collection_time': get_ist_time().strftime('%Y-%m-%d %H:%M:%S')
+        # Binance API parameters
+        url = "https://api.binance.com/api/v3/klines"
+        params = {
+            "symbol": "WLDUSDT",
+            "interval": "15m",  # Match 15-minute collection interval
+            "limit": 1000       # Get enough data for meaningful analysis
         }
+
+        # API request
+        response = requests.get(url, params=params)
+        response.raise_for_status()
         
+        # Create DataFrame from response
+        columns = [
+            'timestamp', 'open', 'high', 'low', 'close', 'volume',
+            'close_time', 'quote_volume', 'trades', 'taker_buy_base',
+            'taker_buy_quote', 'ignore'
+        ]
+        
+        df = pd.DataFrame(response.json(), columns=columns)
+        
+        # Convert timestamp to datetime
+        df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
+        
+        # Select and convert numeric columns
+        numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'quote_volume']
+        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+        
+        # Filter recent data (last 24 hours)
+        df = df[df['timestamp'] > datetime.now() - timedelta(hours=24)]
+        
+        return df.dropna().reset_index(drop=True)
+
+    except requests.exceptions.RequestException as e:
+        print(f"API Error: {str(e)}")
+        return pd.DataFrame()
     except Exception as e:
-        print(f"Extraction error: {str(e)}")
-        return None
+        print(f"Extraction Error: {str(e)}")
+        return pd.DataFrame()

@@ -1,36 +1,18 @@
 import pandas as pd
 
-def clean_data(raw_data):
-    #Clean and validate raw data in memory
-    if not raw_data:
-        return None
-
+def clean_wld_data(raw_df):
+    # Worldcoin-specific data cleaning
     try:
-        # Convert to DataFrame
-        df = pd.DataFrame([raw_data])
-        
-        # Convert timestamps
-        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_convert('Asia/Kolkata')
-        df['collection_time'] = pd.to_datetime(df['collection_time']).dt.tz_localize('Asia/Kolkata')
-        
-        
-        # Numeric validation
-        numeric_cols = ['price', 'high_24h', 'low_24h', 'volume_24h', 'market_cap']
+        df = raw_df.copy()
+        numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'quote_volume']
         df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
         
-        # Data quality checks
-        df = df[
-            (df['price'] > 0) &
-            (df['volume_24h'] >= 0) &
-            (df['timestamp'].notnull())
-        ]
+        # Worldcoin-specific filters
+        df = df[df['volume'] > 1000]  # Filter low-volume noise
+        df['price_change'] = df['close'] - df['open']
+        df['symbol'] = 'WLD/USDT'  # Add trading pair
         
-        # Add freshness metric
-        df['data_freshness'] = (df['collection_time'] - df['timestamp']).dt.total_seconds()
-        df = df[df['data_freshness'] < 3600]  # 1 hour threshold
-        
-        return df.iloc[0].to_dict() if not df.empty else None
-        
+        return df.dropna().reset_index(drop=True)
     except Exception as e:
-        print(f"Transformation error: {str(e)}")
-        return None
+        print(f"WLD Cleaning Error: {str(e)}")
+        return pd.DataFrame()

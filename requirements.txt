@@ -1,8 +1,7 @@
 # Core dependencies
-requests>=2.32.0
-pandas==2.0.3
-numpy==1.24.3
 mysql-connector-python>=9.1.0
+python-binance==1.0.19
+numpy==1.24.4
+pandas==1.5.3
 python-dotenv==1.0.0
-pytz==2023.3
-
+requests

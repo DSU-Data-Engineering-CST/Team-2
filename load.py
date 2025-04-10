@@ -1,81 +1,85 @@
 import os
-import mysql.connector
 from dotenv import load_dotenv
+import mysql.connector
+from mysql.connector import Error
 from datetime import datetime
 
-load_dotenv("config.env")
+# Load environment variables from .env file
+load_dotenv()
 
-def create_connection():
-    #Create and return MySQL connection
+# Database configuration
+DB_CONFIG = {
+    "host": os.getenv("DB_HOST"),
+    "port": int(os.getenv("DB_PORT", 3306)),
+    "user": os.getenv("DB_USER"),
+    "password": os.getenv("DB_PASSWORD"),
+    "database": os.getenv("DB_NAME"),
+    "auth_plugin": 'mysql_native_password'
+}
+
+def save_worldcoin_data(data):
+    """Save transformed Worldcoin metrics into MySQL database."""
     try:
-        return mysql.connector.connect(
-            host=os.getenv('DB_HOST'),
-            user=os.getenv('DB_USER'),
-            password=os.getenv('DB_PASSWORD'),
-            database=os.getenv('DB_NAME'),
-            auth_plugin=('mysql_native_password')
-        )
-    except Exception as e:
-        print(f"Database connection error: {str(e)}")
-        return None
-
-def initialize_database():
-    #Create table if not exists
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
+        connection = mysql.connector.connect(**DB_CONFIG)
+        if connection.is_connected():
+            cursor = connection.cursor()
+            
+            # Create table if not exists
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS worldcoin_metrics (
-                    timestamp DATETIME PRIMARY KEY,
-                    price DECIMAL(18,8),
-                    high_24h DECIMAL(18,8),
-                    low_24h DECIMAL(18,8),
-                    volume_24h DECIMAL(18,2),
-                    market_cap DECIMAL(18,2),
-                    collection_time DATETIME,
-                    data_freshness INT
-                )
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    symbol VARCHAR(10) NOT NULL,
+                    timestamp DATETIME NOT NULL,
+                    open DECIMAL(12,6) NOT NULL,
+                    high DECIMAL(12,6) NOT NULL,
+                    low DECIMAL(12,6) NOT NULL,
+                    close DECIMAL(12,6) NOT NULL,
+                    volume DECIMAL(16,4) NOT NULL,
+                    quote_volume DECIMAL(20,8) NOT NULL,
+                    collection_time DATETIME NOT NULL,
+                    UNIQUE KEY unique_timestamp (timestamp)
+                );
             """)
-            conn.commit()
-        finally:
-            conn.close()
-
-def load_to_database(clean_data):
-    #Directly load cleaned data to MySQL
-    if not clean_data:
-        return
-
-    conn = create_connection()
-    if conn:
-        try:
-            cursor = conn.cursor()
+            
+            # Insert data with duplicate handling
             insert_query = """
-                INSERT INTO worldcoin_metrics
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                INSERT INTO worldcoin_metrics 
+                (symbol, timestamp, open, high, low, close, volume, quote_volume, collection_time)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON DUPLICATE KEY UPDATE
-                    price=VALUES(price),
-                    high_24h=VALUES(high_24h),
-                    low_24h=VALUES(low_24h),
-                    volume_24h=VALUES(volume_24h),
-                    market_cap=VALUES(market_cap),
-                    collection_time=VALUES(collection_time),
-                    data_freshness=VALUES(data_freshness)
+                    open = VALUES(open),
+                    high = VALUES(high),
+                    low = VALUES(low),
+                    close = VALUES(close),
+                    volume = VALUES(volume),
+                    quote_volume = VALUES(quote_volume),
+                    collection_time = VALUES(collection_time)
             """
-            cursor.execute(insert_query, (
-                clean_data['timestamp'].to_pydatetime(),
-                clean_data['price'],
-                clean_data['high_24h'],
-                clean_data['low_24h'],
-                clean_data['volume_24h'],
-                clean_data['market_cap'],
-                clean_data['collection_time'].to_pydatetime(),
-                clean_data['data_freshness']
-            ))
-            conn.commit()
-            print(f"Successfully loaded data for {clean_data['timestamp']}")
-        except Exception as e:
-            print(f"Loading error: {str(e)}")
-            conn.rollback()
-        finally:
-            conn.close()
+            
+            values = (
+                data['symbol'],
+                data['timestamp'],
+                data['open'],
+                data['high'],
+                data['low'],
+                data['close'],
+                data['volume'],
+                data['quote_volume'],
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            )
+            
+            cursor.execute(insert_query, values)
+            connection.commit()
+            print("✅ Worldcoin data inserted/updated successfully.")
+
+    except Error as e:
+        print(f"❌ Database error: {e}")
+        if connection:
+            connection.rollback()
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
+        if 'connection' in locals() and connection.is_connected():
+            connection.close()
