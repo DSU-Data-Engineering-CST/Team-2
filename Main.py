@@ -38,13 +38,13 @@ def run_etl_pipeline():
         end_time = datetime.now().strftime('%H:%M:%S')
         print(f"\n{'-' * 40}")
         print(f" ETL Cycle Completed: {end_time}")
-        print("Next run in 15 minutes...")
+       
 
 if __name__ == "__main__":
     print("\n" + "=" * 40)
     print(" Initializing Worldcoin ETL Pipeline")
     print("=" * 40)
     
-    while True:
-        run_etl_pipeline()
-        time.sleep(1200)  # 5-minute interval
+   
+    run_etl_pipeline()
+        

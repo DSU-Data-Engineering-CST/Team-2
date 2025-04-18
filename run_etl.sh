@@ -34,7 +34,7 @@ fi
 
 # Step 4: Run the main ETL pipeline
 echo "🚀 Running ETL pipeline..."
-python main.py
+python Main.py
 
 # Step 5: Deactivate virtual environment
 deactivate

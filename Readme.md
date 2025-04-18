@@ -2,14 +2,34 @@
 
 A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data processing, designed to run in Docker containers. Collects, transforms, and stores cryptocurrency metrics directly into MySQL without intermediate file storage.
 
+
+## Project Objectives
+
+This project aims to:
+
+- **Analyze Market Trends**  
+  By collecting and storing historical price and volume data, the system supports the identification of key trends and market patterns for Worldcoin.
+
+- **Enable Quantitative Research**  
+  The pipeline enables structured access to clean, time-series data, facilitating quantitative analysis and strategy development for crypto trading and investment.
+
+- **Build a Scalable Crypto Analytics Platform**  
+  The modular and containerized setup lays the foundation for a broader system capable of ingesting, transforming, and storing data for multiple cryptocurrencies.
+
+- **Support Machine Learning Models**  
+  Clean, labeled historical data can be used to train ML models for price prediction, anomaly detection, or volatility forecasting.
+
+- **Preserve Data for Academic Use**  
+  Enables reproducibility and long-term study by storing consistent historical records, useful in academic research, statistical modeling, and capstone projects.
+
+---
+
 ## Key Features
 
 - **Containerized Workflow**  
   Dockerized MySQL + Python ETL service with health monitoring
 - **Direct Database Storage**  
   Eliminates CSV intermediates using in-memory processing
-- **15-Minute Interval Updates**  
-  Automated scheduling with fault tolerance
 - **Data Validation**  
   Quality checks and freshness monitoring
 - **Persistent Storage**  
@@ -17,10 +37,10 @@ A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data proce
 - **IST Timezone Support**  
   Localized timestamp handling
 
+
 ## Prerequisites
 
 - Docker 20.10+
-- Docker Compose 2.20+
 - Python 3.9+ (for local development only)
 - Internet connection for API access
 
@@ -34,12 +54,6 @@ git clone https://github.com/DSU-Data-Engineering-CST/Team-2[World-Coin].git
 # Install dependencies
 pip install -r requirements.txt
 
-# Create environment configuration
-echo "DB_HOST=localhost
-DB_USER=etl_user
-DB_PASSWORD=secure_password
-DB_NAME=crypto_data
-auth_plugin=mysql_native_password" > .env
 ```
 
 ## Quick Start
@@ -56,17 +70,7 @@ docker-compose logs -f etl
 
 Automatically configured via Docker:
 
-```yaml
-# docker-compose.yml
-services:
-  mysql:
-    image: mysql:8.0
-    environment:
-      MYSQL_DATABASE: crypto_data
-      MYSQL_USER: etl_user
-      MYSQL_PASSWORD: secure_password
-    volumes:
-      - mysql_data:/var/lib/mysql
+
 ```
 
 ## Environment Variables
@@ -82,10 +86,6 @@ services:
 
 ## Customization
 
-### Modify Collection Interval
-```python
-# main.py
-time.sleep(900)  # 900 seconds = 15 minutes
 ```
 
 ### Add New Metrics
@@ -101,11 +101,6 @@ def get_ist_time():
 ```
 
 ## Monitoring & Troubleshooting
-
-**View Container Status:**
-```bash
-docker-compose ps
-```
 
 **Inspect MySQL Data:**
 ```bash
