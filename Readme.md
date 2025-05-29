@@ -1,120 +1,138 @@
-# Worldcoin Cryptocurrency ETL Pipeline
+# 📈 Worldcoin Historical Data ETL Pipeline
 
-A serverless Python ETL pipeline for real-time Worldcoin (WLD) market data processing, designed to run in Docker containers. Collects, transforms, and stores cryptocurrency metrics directly into MySQL without intermediate file storage.
-
-
-## Project Objectives
-
-This project aims to:
-
-- **Analyze Market Trends**  
-  By collecting and storing historical price and volume data, the system supports the identification of key trends and market patterns for Worldcoin.
-
-- **Enable Quantitative Research**  
-  The pipeline enables structured access to clean, time-series data, facilitating quantitative analysis and strategy development for crypto trading and investment.
-
-- **Build a Scalable Crypto Analytics Platform**  
-  The modular and containerized setup lays the foundation for a broader system capable of ingesting, transforming, and storing data for multiple cryptocurrencies.
-
-- **Support Machine Learning Models**  
-  Clean, labeled historical data can be used to train ML models for price prediction, anomaly detection, or volatility forecasting.
-
-- **Preserve Data for Academic Use**  
-  Enables reproducibility and long-term study by storing consistent historical records, useful in academic research, statistical modeling, and capstone projects.
+A scalable, container-friendly ETL pipeline to fetch, transform, and store historical 5-minute interval data for Worldcoin (WLD/USDT) from Binance into a MySQL database.
 
 ---
 
-## Key Features
+## 🚀 Project Overview
 
-- **Containerized Workflow**  
-  Dockerized MySQL + Python ETL service with health monitoring
-- **Direct Database Storage**  
-  Eliminates CSV intermediates using in-memory processing
-- **Data Validation**  
-  Quality checks and freshness monitoring
-- **Persistent Storage**  
-  MySQL data volume for crash recovery
-- **IST Timezone Support**  
-  Localized timestamp handling
+This project automates the full ETL (Extract, Transform, Load) process for Worldcoin cryptocurrency data:
 
+- **Extraction**: Fetches historical WLD/USDT data from Binance since its launch.
+- **Transformation**: Cleans data, computes technical indicators (SMA, EMA, TMA), and enriches it with time features.
+- **Loading**: Saves processed records to a MySQL database with schema validation and deduplication.
 
-## Prerequisites
+---
 
-- Docker 20.10+
-- Python 3.9+ (for local development only)
-- Internet connection for API access
+## 📂 Folder Structure
 
-## Installation
+```
+
+.
+├── extract.py        # Data extraction from Binance API
+├── transform.py      # Data transformation and feature engineering
+├── load.py           # Database and table creation, and data loading
+├── main.py           # ETL orchestration script
+├── .env              # Environment variables (MySQL credentials)
+├── requirements.txt  # Python dependencies
+
+````
+
+---
+
+## 🧪 Features
+
+- ⏱ Retrieves 5-minute candles since WLD's launch.
+- 🧼 Cleans, filters, and enriches data with technical and temporal indicators.
+- 🛢 Automatically creates MySQL database and table if absent.
+- 🔄 Avoids duplicate records using timestamp-based uniqueness.
+- 📊 Supports SMA, EMA, and TMA calculation on closing price.
+
+---
+
+## ⚙️ Requirements
+
+- Python 3.8+
+- MySQL Server
+- Internet access (to call Binance API)
+
+Install dependencies with:
 
 ```bash
-# Clone repository
-
-git clone https://github.com/DSU-Data-Engineering-CST/Team-2[World-Coin].git
-
-# Install dependencies
 pip install -r requirements.txt
+````
 
+---
+
+## 🔐 Environment Variables
+
+Create a `.env` file in the root directory:
+
+```ini
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=your_username
+DB_PASSWORD=your_password
+DB_NAME=worldcoin_metrics
 ```
 
-## Quick Start
+---
+
+## 💡 How It Works
+
+Run the pipeline with:
 
 ```bash
-# Build and launch containers
-docker-compose up --build -d
-
-# Monitor ETL logs
-docker-compose logs -f etl
+python main.py
 ```
 
-## Database Configuration
+This executes:
 
-Automatically configured via Docker:
+1. `fetch_coin_data()` → Binance API (from `extract.py`)
+2. `clean_wld_data()` → cleans and computes features (from `transform.py`)
+3. `save_worldcoin_data()` → loads into DB (from `load.py`)
 
+Each row is enriched with:
+
+* `typical_price`, `weighted_price`
+* Time-based fields: year, month, week, iso\_week, etc.
+* Technical indicators: `SMA_7`, `EMA_7`, `TMA_7`
+
+---
+
+## 🛠 Schema Details (`worldcoin_metrics`)
+
+| Column                                         | Type          | Description                |
+| ---------------------------------------------- | ------------- | -------------------------- |
+| id                                             | INT           | Auto-increment primary key |
+| symbol                                         | VARCHAR(10)   | "WLD/USDT"                 |
+| timestamp                                      | DATETIME      | Start time of candle       |
+| open, high, low, close                         | DECIMAL       | OHLC price data            |
+| volume                                         | DECIMAL       | Trade volume               |
+| quote\_volume                                  | DECIMAL       | Quote asset volume         |
+| trades                                         | INT           | Number of trades           |
+| collection\_time                               | DATETIME      | Data fetch timestamp       |
+| typical\_price                                 | DECIMAL       | Avg of (high+low+close)/3  |
+| weighted\_price                                | DECIMAL       | quote\_volume / volume     |
+| SMA\_7, EMA\_7, TMA\_7                         | DECIMAL       | Technical indicators       |
+| year, month, week, iso\_week, year\_month, day | Time features |                            |
+
+---
+
+## ⚠️ Error Handling
+
+* Gracefully retries on API or DB failure.
+* Logs messages for failed inserts.
+* Uses deduplication via `ON DUPLICATE KEY UPDATE`.
+
+---
+
+## 📌 Future Improvements
+
+* Add containerization via Docker Compose
+* Schedule recurring ETL with cron
+* Include more symbols from Binance
+
+---
+
+## 👨‍💻 Authors
+
+* Team 2 — Data Engineering, Dept. of CST, DSU
+
+---
+
+## 📜 License
+
+This project is for academic purposes only.
 
 ```
-
-## Environment Variables
-
-| Variable        | Description            | Docker Default      |
-|------------------|------------------------|----------------------|
-| `DB_HOST`        | MySQL service name     | `mysql`              |
-| `DB_PORT`        | MySQL port             | `3306`               |
-| `DB_USER`        | Database username      | `etl_user`           |
-| `DB_PASSWORD`    | Database password      | `secure_password`    |
-| `DB_NAME`        | Target database name   | `crypto_data`        |
-| `auth_plugin`    | MySQL auth plugin      | `mysql_native_password` |
-
-## Customization
-
-```
-
-### Add New Metrics
-1. Update `extract.py` with new API fields
-2. Add validation rules in `transform.py`
-3. Modify table schema in `load.py`
-
-### Change Timezone
-```python
-# extract.py
-def get_ist_time():
-    return datetime.now(timezone(timedelta(hours=5, minutes=30)))  # IST
-```
-
-## Monitoring & Troubleshooting
-
-**Inspect MySQL Data:**
-```bash
-docker exec -it worldcoin-mysql mysql -u etl_user -p crypto_data
-```
-
-## Error Handling & Monitoring
-
-- Automatic retry on API failures
-- Logs for every pipeline execution
-- Alerts for connection issues or data validation failures
-
-## Maintainers
-
-- Team 2 – Data Engineering @ DSU CST
-```
-
