@@ -1,41 +1,61 @@
 import requests
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
 def fetch_coin_data():
-    """Fetch Worldcoin (WLD/USDT) market data from Binance API"""
     try:
-        # Binance API parameters
         url = "https://api.binance.com/api/v3/klines"
+        all_data = []
+
+        # Worldcoin launch date
+        start_time = int(datetime(2023, 7, 24).timestamp() * 1000)
+        end_time = int(datetime.now().timestamp() * 1000)
+
         params = {
             "symbol": "WLDUSDT",
-            "interval": "15m",  # Match 15-minute collection interval
-            "limit": 1000       # Get enough data for meaningful analysis
+            "interval": "5m",
+            "limit": 1000,
+            "startTime": start_time
         }
 
-        # API request
-        response = requests.get(url, params=params)
-        response.raise_for_status()
-        
-        # Create DataFrame from response
+        print("⏳ Fetching all available 5-minute WLD data since launch...")
+
+        while True:
+            response = requests.get(url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            if not data:
+                break
+
+            all_data.extend(data)
+
+            # Set next start time to 1ms after last candle's close time
+            params['startTime'] = int(data[-1][6]) + 1
+
+            if params['startTime'] > end_time:
+                break
+
+            # Optional: Show progress every 10,000 rows
+            if len(all_data) % 10000 == 0:
+                print(f"✓ Retrieved {len(all_data)} rows...")
+
         columns = [
             'timestamp', 'open', 'high', 'low', 'close', 'volume',
             'close_time', 'quote_volume', 'trades', 'taker_buy_base',
             'taker_buy_quote', 'ignore'
         ]
-        
-        df = pd.DataFrame(response.json(), columns=columns)
-        
-        # Convert timestamp to datetime
+
+        df = pd.DataFrame(all_data, columns=columns)
         df['timestamp'] = pd.to_datetime(df['timestamp'], unit='ms')
-        
-        # Select and convert numeric columns
+        df['year'] = df['timestamp'].dt.year
+        df['month'] = df['timestamp'].dt.month
+
+        # Convert numeric columns
         numeric_cols = ['open', 'high', 'low', 'close', 'volume', 'quote_volume']
         df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
-        
-        # Filter recent data (last 24 hours)
-        df = df[df['timestamp'] > datetime.now() - timedelta(hours=24)]
-        
+
+        print(f"✅ Successfully retrieved {len(df)} rows of 5-minute data since launch.")
         return df.dropna().reset_index(drop=True)
 
     except requests.exceptions.RequestException as e:
